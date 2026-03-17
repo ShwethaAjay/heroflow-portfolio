@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HeroFlow Case Study</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #F5C842;
+    --gold-dim: #8B6F1A;
+    --cream: #F0EAD8;
+    --white: #FAFAF8;
+    --black: #0A0A0A;
+    --charcoal: #141414;
+    --muted: #4A4A4A;
+    --border: rgba(245,200,66,0.15);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE TEXTURE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* ── PROGRESS BAR ── */
+  #progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: var(--gold);
+    width: 0%;
+    z-index: 1000;
+    transition: width 0.1s linear;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: 1.5rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    background: linear-gradient(to bottom, rgba(10,10,10,0.9), transparent);
+    backdrop-filter: blur(2px);
+  }
+
+  .nav-logo {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+
+  .nav-links a:hover { color: var(--gold); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 8rem 3rem 5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 60% 50% at 80% 40%, rgba(245,200,66,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 20% 70%, rgba(245,200,66,0.03) 0%, transparent 50%);
+  }
+
+  .hero-kicker {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 1s ease forwards 0.3s;
+  }
+
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(4rem, 10vw, 9rem);
+    font-weight: 900;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    opacity: 0;
+    animation: fadeUp 1s ease forwards 0.5s;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .hero-subtitle {
+    margin-top: 2.5rem;
+    max-width: 520px;
+    font-size: 1rem;
+    color: rgba(250,250,248,0.6);
+    line-height: 1.8;
+    opacity: 0;
+    animation: fadeUp 1s ease forwards 0.8s;
+  }
+
+  .hero-meta {
+    margin-top: 3rem;
+    display: flex;
+    gap: 3rem;
+    opacity: 0;
+    animation: fadeUp 1s ease forwards 1s;
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .meta-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+  }
+
+  .meta-value {
+    font-size: 0.85rem;
+    color: var(--cream);
+    font-weight: 400;
+  }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 2rem;
+    right: 3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    animation: fadeUp 1s ease forwards 1.3s;
+  }
+
+  .hero-scroll span {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    writing-mode: vertical-rl;
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scrollPulse 2s ease infinite;
+  }
+
+  /* ── CHAPTER SYSTEM ── */
+  .chapter {
+    padding: 8rem 3rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .chapter-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .chapter-number::after {
+    content: '';
+    display: block;
+    height: 1px;
+    width: 40px;
+    background: var(--gold-dim);
+  }
+
+  .chapter-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    font-weight: 700;
+    line-height: 1.05;
+    margin-bottom: 3rem;
+  }
+
+  .chapter-title em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+    margin: 0 3rem;
+    width: calc(100% - 6rem);
+  }
+
+  /* ── TEXT LAYOUTS ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    align-items: start;
+  }
+
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  .lead {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    line-height: 1.6;
+    color: var(--cream);
+    font-weight: 400;
+  }
+
+  p {
+    color: rgba(250,250,248,0.65);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+  }
+
+  /* ── PROBLEM STATEMENT ── */
+  .problem-statement {
+    background: var(--charcoal);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    padding: 3rem;
+    margin: 3rem 0;
+    position: relative;
+  }
+
+  .ps-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+  }
+
+  .ps-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    line-height: 1.6;
+    color: var(--cream);
+  }
+
+  .ps-text .highlight {
+    color: var(--gold);
+    font-style: italic;
+  }
+
+  .ps-text .underline {
+    text-decoration: underline;
+    text-decoration-color: var(--gold-dim);
+    text-underline-offset: 4px;
+  }
+
+  /* ── TENSION BOX ── */
+  .tension-box {
+    background: linear-gradient(135deg, rgba(245,200,66,0.05) 0%, rgba(245,200,66,0.01) 100%);
+    border: 1px solid rgba(245,200,66,0.2);
+    padding: 2rem 2.5rem;
+    margin: 2rem 0;
+    position: relative;
+  }
+
+  .tension-box::before {
+    content: '"';
+    position: absolute;
+    top: -1rem;
+    left: 2rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 5rem;
+    color: var(--gold);
+    opacity: 0.3;
+    line-height: 1;
+  }
+
+  .tension-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-style: italic;
+    color: var(--cream);
+    padding-top: 1.5rem;
+  }
+
+  /* ── ITERATION CARDS (montage) ── */
+  .iteration-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin: 3rem 0;
+  }
+
+  .iter-card {
+    background: var(--charcoal);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    position: relative;
+    transition: border-color 0.3s;
+  }
+
+  .iter-card:hover {
+    border-color: rgba(245,200,66,0.4);
+  }
+
+  .iter-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.75rem;
+    margin-bottom: 1.25rem;
+    display: inline-block;
+  }
+
+  .iter-badge.fail { 
+    background: rgba(255,80,80,0.1); 
+    color: #FF8080;
+    border: 1px solid rgba(255,80,80,0.2);
+  }
+
+  .iter-badge.learn { 
+    background: rgba(245,200,66,0.08); 
+    color: var(--gold);
+    border: 1px solid rgba(245,200,66,0.2);
+  }
+
+  .iter-badge.pivot { 
+    background: rgba(80,200,150,0.08); 
+    color: #80D9B0;
+    border: 1px solid rgba(80,200,150,0.2);
+  }
+
+  .iter-card h4 {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--white);
+    margin-bottom: 0.75rem;
+  }
+
+  .iter-card p {
+    font-size: 0.8rem;
+    margin: 0;
+  }
+
+  /* ── TIMELINE ── */
+  .timeline {
+    position: relative;
+    padding-left: 2rem;
+    margin: 3rem 0;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+  }
+
+  .timeline-item {
+    position: relative;
+    padding: 0 0 3rem 2.5rem;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -0.3rem;
+    top: 0.45rem;
+    width: 7px;
+    height: 7px;
+    background: var(--gold);
+    border-radius: 50%;
+  }
+
+  .timeline-day {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .timeline-event {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 1.05rem;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+  }
+
+  /* ── STAT CALLOUTS ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 3rem 0;
+  }
+
+  .stat-block {
+    background: var(--charcoal);
+    padding: 2.5rem 2rem;
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: var(--gold);
+    line-height: 1;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-desc {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── CLIMAX ── */
+  .climax-section {
+    background: var(--charcoal);
+    padding: 8rem 3rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .climax-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(245,200,66,0.08) 0%, transparent 70%);
+  }
+
+  .climax-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .climax-inner .chapter-title {
+    font-size: clamp(3rem, 7vw, 6rem);
+  }
+
+  /* ── INSIGHT CARDS ── */
+  .insight-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 3rem 0;
+  }
+
+  .insight-card {
+    padding: 2.5rem;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+
+  .insight-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 5rem;
+    font-weight: 900;
+    color: rgba(245,200,66,0.08);
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    line-height: 1;
+  }
+
+  .insight-card h3 {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 1rem;
+    color: var(--white);
+    margin-bottom: 0.75rem;
+  }
+
+  /* ── RESOLUTION ── */
+  .resolution-section {
+    border-top: 1px solid var(--border);
+    padding: 8rem 3rem 6rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* ── FINAL STATEMENT ── */
+  .final-statement {
+    background: var(--black);
+    padding: 8rem 3rem;
+    text-align: center;
+    position: relative;
+    border-top: 1px solid var(--border);
+  }
+
+  .final-statement .big-text {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 900;
+    line-height: 1.1;
+    max-width: 900px;
+    margin: 0 auto;
+    color: var(--cream);
+  }
+
+  .final-statement .big-text em {
+    color: var(--gold);
+    font-style: italic;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 2rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+  }
+
+  footer span {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+
+  /* ── HORIZONTAL RULE GOLD ── */
+  .gold-hr {
+    border: none;
+    height: 1px;
+    background: var(--border);
+    margin: 4rem 0;
+  }
+
+  /* ── INLINE HIGHLIGHT ── */
+  .hl { color: var(--gold); }
+
+  /* ── TECH STACK CHIPS ── */
+  .tech-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .chip {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.75rem;
+    color: var(--muted);
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .fade-in {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; }
+    .hero { padding: 7rem 1.5rem 4rem; }
+    .chapter { padding: 5rem 1.5rem; }
+    .two-col { grid-template-columns: 1fr; gap: 2rem; }
+    .three-col { grid-template-columns: 1fr; }
+    .iteration-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr; }
+    .insight-grid { grid-template-columns: 1fr; }
+    .climax-section { padding: 5rem 1.5rem; }
+    .resolution-section { padding: 5rem 1.5rem; }
+    .final-statement { padding: 5rem 1.5rem; }
+    footer { flex-direction: column; gap: 1rem; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<nav>
+  <div class="nav-logo">HeroFlow / Case Study</div>
+  <ul class="nav-links">
+    <li><a href="#background">Context</a></li>
+    <li><a href="#conflict">Problem Space</a></li>
+    <li><a href="#montage">Iteration</a></li>
+    <li><a href="#climax">Validation</a></li>
+    <li><a href="#resolution">Solution</a></li>
+  </ul>
+</nav>
+
+<!-- ──────────────────── HERO ──────────────────── -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-kicker">Product Design · 5-Day Sprint · 2024</div>
+  <h1 class="hero-title">Hero<em>Flow</em></h1>
+  <p class="hero-subtitle">How a team of seven proposed, designed, and prototyped a working AI-powered video asset platform for Lemonlight. Five days flat.</p>
+  <div class="hero-meta">
+    <div class="meta-item">
+      <span class="meta-label">Client</span>
+      <span class="meta-value">Lemonlight</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Sprint</span>
+      <span class="meta-value">5 Days</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Deliverable</span>
+      <span class="meta-value">Prototype + Pitch</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Role</span>
+      <span class="meta-value">Product Strategist</span>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ──────────────────── ACT 1: BACKGROUND ──────────────────── -->
+<section id="background" class="chapter fade-in">
+  <div class="chapter-number">01 · Context</div>
+  <h2 class="chapter-title">A studio at a <em>crossroads.</em></h2>
+
+  <div class="two-col">
+    <div>
+      <p class="lead">Lemonlight is a traditional video production company with an elite client list: Delta, Apple, Walmart, Amazon. But the industry was shifting faster than their workflow could keep up.</p>
+      <p>Studios that stopped at post-production were losing relevance. The demand had expanded into content repurposing, social-native formats, and data-driven editing. Capabilities that required either a much larger team, or a smarter system.</p>
+      <p>AI was the obvious answer. But the question was never <em>whether</em> to adopt it. It was <em>how.</em> Generic AI video generation wasn't going to fly with a client list of this caliber. Enterprise brands don't want synthetic footage when they already own pristine, brand-accurate B-roll.</p>
+    </div>
+    <div>
+      <div class="tension-box">
+        <div class="tension-text">The real opportunity wasn't to replace their footage with AI. It was to make their existing footage <span style="color:var(--gold)">infinitely more accessible and usable.</span></div>
+      </div>
+      <div class="tech-chips" style="margin-top:2rem;">
+        <span class="chip">Video Production</span>
+        <span class="chip">AI Integration</span>
+        <span class="chip">Content Strategy</span>
+        <span class="chip">Enterprise SaaS</span>
+        <span class="chip">B2B</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="problem-statement fade-in">
+    <div class="ps-label">Problem Statement · IYA Format</div>
+    <p class="ps-text">
+      A <span class="highlight">video production manager</span> who feels <span class="underline">overwhelmed</span> by the volume of unused campaign footage needs to <span class="underline">quickly locate, contextualize, and repurpose the right clips</span> but <span class="highlight">has no searchable system, forcing costly manual reviews and missed content windows.</span>
+    </p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ──────────────────── ACT 2: CONFLICT ──────────────────── -->
+<section id="conflict" class="chapter fade-in">
+  <div class="chapter-number">02 · Problem Space</div>
+  <h2 class="chapter-title">The brief was simple. <em>The stakes weren't.</em></h2>
+
+  <div class="two-col">
+    <div>
+      <p class="lead">Five days. One client. A working prototype that had to prove technical feasibility to a company with Delta, Apple, and Walmart on its roster. The margin for a vague, concept-only pitch was zero.</p>
+      <p>The brief asked us to find a "suitable means" for Lemonlight to incorporate AI into their workflow. That openness was its own trap. Without a clear constraint, every direction felt equally valid and equally risky. We could spend two days pursuing a direction that engineering couldn't build, or design a technically sound product that solved the wrong problem entirely.</p>
+      <p>On top of that, the AI video space was noisy. Every "solution" we looked at was either generating footage that wouldn't pass enterprise brand standards, or adding yet another tool to a workflow that was already too fragmented.</p>
+    </div>
+    <div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-day">Day 1</div>
+          <div class="timeline-event">Client Brief & Scope Setting</div>
+          <p style="font-size:0.8rem;">Lemonlight presents their challenge. The team is excited but the timeline feels impossibly short.</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-day">Day 1 to 2</div>
+          <div class="timeline-event">Research & Framing</div>
+          <p style="font-size:0.8rem;">We mapped the industry, interviewed stakeholders, and landed on the core insight: the problem is <em>discoverability</em>, not content generation.</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-day">Day 2</div>
+          <div class="timeline-event">First concepts hit a wall</div>
+          <p style="font-size:0.8rem;">Our initial direction was too broad. Engineering flagged it as technically infeasible within the sprint. We had to reframe fast.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ──────────────────── ACT 3: RISING ACTION (MONTAGE) ──────────────────── -->
+<section id="montage" class="chapter fade-in">
+  <div class="chapter-number">03 · Iteration</div>
+  <h2 class="chapter-title">Three dead ends before <em>the right door.</em></h2>
+
+  <p class="lead" style="max-width:700px; margin-bottom:3rem;">Design sprints don't move in a straight line. Each bad idea was load-bearing. Without the failures, we never would have found TwelveLabs.</p>
+
+  <div class="iteration-grid">
+    <div class="iter-card">
+      <span class="iter-badge fail">Failed Attempt</span>
+      <h4>V1: Full AI Generation Pipeline</h4>
+      <p>We proposed letting AI generate new video clips to fill content gaps. Engineering quickly flagged this as out-of-scope for a 5-day build, and the client rightfully noted that synthetic video doesn't meet brand standards for Delta or Apple.</p>
+    </div>
+    <div class="iter-card">
+      <span class="iter-badge learn">Key Insight</span>
+      <h4>The "Delta Dawn" Moment</h4>
+      <p>Researching cultural trends, we found an organic spike in the "Delta Dawn" trend. This reframed the entire product: the value isn't generating content — it's <em>responding to moments</em> using owned footage you can actually find.</p>
+    </div>
+    <div class="iter-card">
+      <span class="iter-badge fail">Failed Attempt</span>
+      <h4>V2: Manual Tagging Interface</h4>
+      <p>We designed a manual tagging system for editors. Stakeholder feedback on Day 2 was blunt: editors are already overwhelmed. Adding a tagging workflow wouldn't be adopted. We scrapped it overnight.</p>
+    </div>
+    <div class="iter-card">
+      <span class="iter-badge pivot">Pivot</span>
+      <h4>TwelveLabs as the Backbone</h4>
+      <p>Involving engineering early surfaced TwelveLabs as the video analysis layer. Their API could semantically understand video content and generate searchable text descriptions automatically. No manual tagging required. This unlocked the whole product.</p>
+    </div>
+    <div class="iter-card">
+      <span class="iter-badge learn">Stakeholder Feedback</span>
+      <h4>Editors Want to Describe, Not Search</h4>
+      <p>User testing (even scrappy hallway testing) revealed that editors think in narrative terms — "warm, vibrant, airplane taking off" — not file names. The UX had to be natural language-first, not filter-first.</p>
+    </div>
+    <div class="iter-card">
+      <span class="iter-badge pivot">Pivot</span>
+      <h4>LLM as the Edit Orchestrator</h4>
+      <p>Instead of a traditional editor interface, we designed a prompt-to-edit flow: describe what you want → LLM interprets intent + context (brand data, pitch deck tone) → retrieves and sequences assets. Simpler. More powerful.</p>
+    </div>
+  </div>
+
+  <div class="gold-hr"></div>
+
+  <p class="lead" style="max-width: 700px;">What actually kept the sprint from falling apart:</p>
+
+  <div class="three-col" style="margin-top: 2rem;">
+    <div>
+      <div style="font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.2em; color:var(--gold); text-transform:uppercase; margin-bottom:0.75rem;">01</div>
+      <h3 style="font-family:'DM Sans',sans-serif; font-weight:500; font-size:1rem; color:var(--white); margin-bottom:0.5rem;">Engineering in the room during ideation</h3>
+      <p style="font-size:0.85rem;">Not for sign-off. For shaping. When we whiteboarded the TwelveLabs integration, our engineer immediately knew the API's indexing latency would affect the UX flow. That conversation happened on Day 3, not after mockups were finalized.</p>
+    </div>
+    <div>
+      <div style="font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.2em; color:var(--gold); text-transform:uppercase; margin-bottom:0.75rem;">02</div>
+      <h3 style="font-family:'DM Sans',sans-serif; font-weight:500; font-size:1rem; color:var(--white); margin-bottom:0.5rem;">One stakeholder check-in that changed the product</h3>
+      <p style="font-size:0.85rem;">Mid-sprint, we showed Lemonlight a rough walk-through of the tagging UI. Their feedback: editors already have 12 tools open. We had been designing for power users. We needed to design for people who are tired. The whole interaction model shifted from control to conversation.</p>
+    </div>
+    <div>
+      <div style="font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.2em; color:var(--gold); text-transform:uppercase; margin-bottom:0.75rem;">03</div>
+      <h3 style="font-family:'DM Sans',sans-serif; font-weight:500; font-size:1rem; color:var(--white); margin-bottom:0.5rem;">Deciding what HeroFlow was not</h3>
+      <p style="font-size:0.85rem;">We cut the analytics dashboard, multi-user collaboration, and a client-facing export portal. Not because they were bad ideas. Because including them meant none of them would work. The prompt-to-edit flow is the only thing we built, and it's the only thing that needed to exist for the pitch to land.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ──────────────────── ACT 4: CLIMAX ──────────────────── -->
+<section id="climax" class="climax-section fade-in">
+  <div class="climax-inner">
+    <div class="chapter-number" style="justify-content:center;">04 · Validation</div>
+    <h2 class="chapter-title">Day 5. <em>We weren't sure we'd make it.</em></h2>
+    <p class="lead" style="margin: 2rem auto; max-width:680px; color:rgba(240,234,216,0.75); text-align:center;">The night before the final pitch, the prototype's natural language search was returning inconsistent results. Engineering stayed up fixing the TwelveLabs integration. Design rebuilt the UI flow to account for the latency. We presented on 40 minutes of sleep with a live working demo.</p>
+
+    <div class="stats-row" style="margin: 3rem 0; background:rgba(245,200,66,0.05); border-color:rgba(245,200,66,0.2);">
+      <div class="stat-block" style="background:transparent;">
+        <span class="stat-number">5</span>
+        <span class="stat-desc">Day Sprint</span>
+      </div>
+      <div class="stat-block" style="background:transparent;">
+        <span class="stat-number">3</span>
+        <span class="stat-desc">Major Pivots</span>
+      </div>
+      <div class="stat-block" style="background:transparent;">
+        <span class="stat-number">1</span>
+        <span class="stat-desc">Working Prototype</span>
+      </div>
+    </div>
+
+    <div class="tension-box" style="text-align:left; max-width:680px; margin:0 auto;">
+      <div class="tension-text">The prototype demo ran live. The client saw semantic video search working in real time: typing <span style="color:var(--gold)">"airplane taking off, warm sunset"</span> and watching the right clip surface instantly from their own footage library.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────────────── ACT 5: FALLING ACTION ──────────────────── -->
+<section class="chapter fade-in">
+  <div class="chapter-number">05 · Impact</div>
+  <h2 class="chapter-title">What the sprint <em>unlocked after.</em></h2>
+
+  <div class="two-col">
+    <div>
+      <p class="lead">The prototype revealed something we hadn't fully designed for: the prompt-to-edit flow changed how Lemonlight's team thought about their own footage archive.</p>
+      <p>During the live demo, one of their producers typed a natural language query and paused when the result surfaced. Not because it was wrong. Because they had forgotten that clip existed. They had produced it 18 months earlier for a Delta campaign, and it had been sitting in cold storage ever since.</p>
+      <p>That moment reframed HeroFlow from an efficiency tool into something closer to a creative memory system. It wasn't just about speed. It was about making high-production footage usable across time, not just once at the point of delivery.</p>
+    </div>
+    <div>
+      <div class="insight-grid" style="grid-template-columns:1fr; gap:1.5rem;">
+        <div class="insight-card">
+          <div class="insight-number">01</div>
+          <h3>A new internal workflow proposal</h3>
+          <p style="font-size:0.85rem;">After the pitch, Lemonlight's team started discussing how HeroFlow could integrate with their existing post-production handoff process. The sprint produced a design artifact that sparked a real operational conversation.</p>
+        </div>
+        <div class="insight-card">
+          <div class="insight-number">02</div>
+          <h3>Brand context as a product feature</h3>
+          <p style="font-size:0.85rem;">The HeroFacts layer, where the LLM ingests pitch decks and brand guidelines to contextualize searches, became the detail that differentiated HeroFlow from any off-the-shelf video search tool. It wasn't in the original brief. It emerged from watching how their team actually talked about footage.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ──────────────────── ACT 6: RESOLUTION ──────────────────── -->
+<section id="resolution" class="resolution-section fade-in">
+  <div class="chapter-number">06 · Solution</div>
+  <h2 class="chapter-title">What we <em>built.</em></h2>
+
+  <div class="two-col" style="margin-bottom:4rem;">
+    <div>
+      <p class="lead">HeroFlow is a smart content repurposing platform that connects a brand's owned video library to an AI-powered editing interface, all inside the Lemonlight client portal.</p>
+      <p>The core loop: production footage gets ingested, TwelveLabs analyzes and generates semantic text descriptions, an LLM integrates brand context (pitch decks, HeroFacts, tone guides), the client types what they need in plain English, and the system retrieves and sequences the right assets.</p>
+      <p>No synthetic video. No manual tagging. No editor required.</p>
+    </div>
+    <div>
+      <div style="background:var(--charcoal); border:1px solid var(--border); padding:2rem;">
+        <div style="font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.2em; color:var(--gold); text-transform:uppercase; margin-bottom:1.5rem;">Product Architecture</div>
+        <div class="tech-chips">
+          <span class="chip">TwelveLabs API</span>
+          <span class="chip">Semantic Video Search</span>
+          <span class="chip">LLM Orchestration</span>
+          <span class="chip">Brand Context Layer</span>
+          <span class="chip">Natural Language UI</span>
+          <span class="chip">Asset Database</span>
+          <span class="chip">Prompt to Edit Flow</span>
+        </div>
+        <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid var(--border);">
+          <div class="meta-label" style="margin-bottom:0.75rem;">Pricing Tiers Designed</div>
+          <p style="font-size:0.85rem;"><span class="hl">Starter</span> · $49/mo · 1,000 assets, auto-tagging, 2,000 queries</p>
+          <p style="font-size:0.85rem; margin-top:0.25rem;"><span class="hl">Pro</span> · $199/mo · 5,000 assets with 4K, API access, full market data</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIDEO EMBED SECTION -->
+  <div class="gold-hr"></div>
+
+  <div style="margin: 3rem 0;">
+    <div style="font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--gold); margin-bottom:1.5rem; display:flex; align-items:center; gap:1rem;">
+      Prototype Demo
+      <span style="height:1px; width:40px; background:var(--gold-dim); display:block;"></span>
+    </div>
+    <div id="video-container" style="background:var(--charcoal); border:1px solid var(--border); aspect-ratio:16/9; position:relative; overflow:hidden;">
+      <a href="https://youtu.be/e6uMMuP-ZyI" target="_blank" rel="noopener" style="display:block; width:100%; height:100%; position:relative; cursor:pointer; text-decoration:none;">
+        <img src="https://img.youtube.com/vi/e6uMMuP-ZyI/maxresdefault.jpg" onerror="this.src='https://img.youtube.com/vi/e6uMMuP-ZyI/hqdefault.jpg'" style="width:100%; height:100%; object-fit:cover; display:block;">
+        <div class="play-overlay" style="position:absolute; inset:0; background:rgba(0,0,0,0.35); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem; transition:background 0.3s;">
+          <div style="width:72px; height:72px; background:rgba(245,200,66,0.92); border-radius:50%; display:flex; align-items:center; justify-content:center; transition:transform 0.2s;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="#0A0A0A"><polygon points="8 5 19 12 8 19 8 5"/></svg>
+          </div>
+          <span style="font-family:'DM Mono',monospace; font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:rgba(250,250,248,0.85);">Watch Prototype Demo</span>
+        </div>
+      </a>
+    </div>
+    <style>
+      #video-container a:hover .play-overlay { background: rgba(0,0,0,0.15) !important; }
+      #video-container a:hover .play-overlay div:first-child { transform: scale(1.08); }
+    </style>
+  </div>
+
+  <div class="gold-hr"></div>
+
+  <div class="three-col fade-in">
+    <div>
+      <div style="font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.2em; color:var(--gold); text-transform:uppercase; margin-bottom:0.75rem;">Phase 1</div>
+      <h3 style="font-family:'DM Sans',sans-serif; font-weight:500; font-size:1rem; color:var(--white); margin-bottom:0.5rem;">MVP Launch</h3>
+      <p style="font-size:0.85rem;">Deploy internally within Lemonlight's client portal. Essential search and prompt-to-edit features only. Real-world usage before scaling.</p>
+    </div>
+    <div>
+      <div style="font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.2em; color:var(--gold); text-transform:uppercase; margin-bottom:0.75rem;">Phase 2</div>
+      <h3 style="font-family:'DM Sans',sans-serif; font-weight:500; font-size:1rem; color:var(--white); margin-bottom:0.5rem;">Insights & Intelligence</h3>
+      <p style="font-size:0.85rem;">Layer in trend detection, market analysis, and campaign performance data so clients know <em>when</em> to repurpose, not just how.</p>
+    </div>
+    <div>
+      <div style="font-family:'DM Mono',monospace; font-size:0.6rem; letter-spacing:0.2em; color:var(--gold); text-transform:uppercase; margin-bottom:0.75rem;">Phase 3</div>
+      <h3 style="font-family:'DM Sans',sans-serif; font-weight:500; font-size:1rem; color:var(--white); margin-bottom:0.5rem;">Integration & Scale</h3>
+      <p style="font-size:0.85rem;">Launch as a licensed SaaS platform. Enterprise API access, cross-platform integrations, and capability to serve Lemonlight's entire client roster.</p>
+    </div>
+  </div>
+
+  <div class="gold-hr"></div>
+
+  <div class="two-col fade-in">
+    <div>
+      <div class="chapter-number" style="margin-bottom:1rem;">Outcome</div>
+      <p class="lead">The solution has been receiving mostly positive feedback. Clients responded to the premise immediately: the idea that their owned footage could become a searchable, living asset library rather than a hard drive collecting dust.</p>
+      <p>We're planning our first iteration cycle based on early feedback: improving the natural language parsing for non-English descriptions, adding timeline-based clip trimming directly in the UI, and exploring a lighter onboarding path for smaller clients who aren't working within an existing Lemonlight project.</p>
+    </div>
+    <div>
+      <div class="tension-box">
+        <div class="tension-text">The prompt-to-edit flow wasn't in the original brief. It emerged from watching editors work. <span style="color:var(--gold)">The best features in this sprint came from observing behavior, not solving the stated problem.</span> Lemonlight didn't ask for a natural language interface. They asked us to find a suitable means to use AI. We found it by watching what made their producers stop and think.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────────────── FINAL STATEMENT ──────────────────── -->
+<section class="final-statement fade-in">
+  <p class="big-text">We didn't build a tool. We built a <em>new relationship</em> between a brand and its own footage.</p>
+</section>
+
+<footer>
+  <span>HeroFlow · 5-Day Design Sprint · Lemonlight</span>
+  <span>Team Cool · UX + Product Design</span>
+</footer>
+
+<script>
+  // Progress bar
+  window.addEventListener('scroll', () => {
+    const pct = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+    document.getElementById('progress').style.width = pct + '%';
+  });
+
+  // Video upload handler
+  function handleVideoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    document.getElementById('upload-prompt').style.display = 'none';
+    document.getElementById('embed-frame').style.display = 'none';
+    const vid = document.getElementById('local-video');
+    vid.src = url;
+    vid.style.display = 'block';
+  }
+
+  function embedUrl() {
+    let url = document.getElementById('video-url').value.trim();
+    if (!url) return;
+
+    const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+
+    document.getElementById('upload-prompt').style.display = 'none';
+    document.getElementById('local-video').style.display = 'none';
+    document.getElementById('embed-frame').style.display = 'none';
+
+    if (ytMatch) {
+      const videoId = ytMatch[1];
+      const thumb = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      const container = document.getElementById('video-container');
+      container.innerHTML = `
+        <a href="${watchUrl}" target="_blank" rel="noopener" style="display:block; width:100%; height:100%; position:relative; cursor:pointer; text-decoration:none;">
+          <img src="${thumb}" onerror="this.src='https://img.youtube.com/vi/${videoId}/hqdefault.jpg'" style="width:100%; height:100%; object-fit:cover; display:block;">
+          <div style="position:absolute; inset:0; background:rgba(0,0,0,0.35); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem; transition:background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.2)'" onmouseout="this.style.background='rgba(0,0,0,0.35)'">
+            <div style="width:64px; height:64px; background:rgba(245,200,66,0.9); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="#0A0A0A"><polygon points="8 5 19 12 8 19 8 5"/></svg>
+            </div>
+            <span style="font-family:'DM Mono',monospace; font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:rgba(250,250,248,0.8);">Watch on YouTube</span>
+          </div>
+        </a>`;
+    } else if (vimeoMatch) {
+      const videoId = vimeoMatch[1];
+      const watchUrl = `https://vimeo.com/${videoId}`;
+      // Fetch Vimeo thumbnail via oEmbed
+      fetch(`https://vimeo.com/api/oembed.json?url=${encodeURIComponent(watchUrl)}`)
+        .then(r => r.json())
+        .then(data => {
+          const thumb = data.thumbnail_url || '';
+          const container = document.getElementById('video-container');
+          container.innerHTML = `
+            <a href="${watchUrl}" target="_blank" rel="noopener" style="display:block; width:100%; height:100%; position:relative; cursor:pointer; text-decoration:none;">
+              <img src="${thumb}" style="width:100%; height:100%; object-fit:cover; display:block;">
+              <div style="position:absolute; inset:0; background:rgba(0,0,0,0.35); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem;" onmouseover="this.style.background='rgba(0,0,0,0.2)'" onmouseout="this.style.background='rgba(0,0,0,0.35)'">
+                <div style="width:64px; height:64px; background:rgba(245,200,66,0.9); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#0A0A0A"><polygon points="8 5 19 12 8 19 8 5"/></svg>
+                </div>
+                <span style="font-family:'DM Mono',monospace; font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:rgba(250,250,248,0.8);">Watch on Vimeo</span>
+              </div>
+            </a>`;
+        });
+    } else {
+      // Generic URL fallback
+      const container = document.getElementById('video-container');
+      container.innerHTML = `
+        <a href="${url}" target="_blank" rel="noopener" style="display:flex; width:100%; height:100%; align-items:center; justify-content:center; flex-direction:column; gap:1rem; text-decoration:none;">
+          <div style="width:64px; height:64px; background:rgba(245,200,66,0.9); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#0A0A0A"><polygon points="8 5 19 12 8 19 8 5"/></svg>
+          </div>
+          <span style="font-family:'DM Mono',monospace; font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:rgba(250,250,248,0.8);">Watch Video</span>
+        </a>`;
+    }
+  }
+
+  
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
